@@ -1,0 +1,40 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <!-- Query-only desktop explorer: Windows first (matches maui-windows workload). -->
+    <TargetFrameworks>net9.0-windows10.0.19041.0</TargetFrameworks>
+
+    <OutputType>Exe</OutputType>
+    <RootNamespace>KBUI_Explorer</RootNamespace>
+    <UseMaui>true</UseMaui>
+    <SingleProject>true</SingleProject>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <EnableDefaultCssItems>false</EnableDefaultCssItems>
+    <Nullable>enable</Nullable>
+
+    <ApplicationTitle>KBUI Explorer</ApplicationTitle>
+    <ApplicationId>com.se2000.kbui_explorer</ApplicationId>
+    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+    <ApplicationVersion>1</ApplicationVersion>
+
+    <WindowsPackageType>None</WindowsPackageType>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#1a222c" />
+    <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#0f1419" BaseSize="128,128" />
+    <MauiImage Include="Resources\Images\*" />
+    <MauiFont Include="Resources\Fonts\*" />
+    <MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="$(MauiVersion)" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.5" />
+  </ItemGroup>
+
+</Project>

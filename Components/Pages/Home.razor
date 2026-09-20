@@ -1,0 +1,234 @@
+﻿@page "/"
+@using KBUI_Explorer.Models
+@using KBUI_Explorer.Services
+@inject QueryApiClient Api
+@implements IDisposable
+
+<PageTitle>KBUI Explorer</PageTitle>
+
+<main class="explorer">
+    <header class="hero">
+        <h1>KBUI Explorer</h1>
+        <p class="badge">Query-only · Rag_Ingestion_Tool</p>
+        <p class="meta">@_healthText</p>
+        <p class="lock">This app can only call <code>/health</code>, <code>/search</code>, <code>/rag/query</code>, and <code>/chat</code>. Ingest and index admin are blocked.</p>
+    </header>
+
+    <section class="panel settings">
+        <div class="row">
+            <label for="base">API base URL</label>
+            <input id="base" @bind="_apiBase" placeholder="https://app-q-cpy-hud-dev.azurewebsites.net" />
+        </div>
+        <div class="row">
+            <label for="key">API key (optional — required when API demo hardening is on)</label>
+            <input id="key" type="password" @bind="_apiKey" autocomplete="off" />
+        </div>
+        <button type="button" class="secondary" disabled="@_busy" @onclick="SaveAndPingAsync">Save &amp; check health</button>
+    </section>
+
+    <section class="panel">
+        <div class="row">
+            <label for="q">Question</label>
+            <textarea id="q" @bind="_question" maxlength="@Api.MaxQuestionLength" placeholder="What is the HOME program?" rows="4"></textarea>
+            <p class="hint">Max @_maxLen characters · Top K capped at @_maxTopK</p>
+        </div>
+
+        <div class="row">
+            <span class="legend">Call</span>
+            <div class="radios">
+                <InputRadioGroup @bind-Value="_mode">
+                    <label><InputRadio Value="@QueryMode.Search" /> Search KB</label>
+                    <label><InputRadio Value="@QueryMode.Rag" /> RAG</label>
+                    <label><InputRadio Value="@QueryMode.Chat" /> Chat only</label>
+                </InputRadioGroup>
+            </div>
+        </div>
+
+        <div class="row">
+            <label for="k">Top K (Search and RAG)</label>
+            <input id="k" type="number" min="1" max="@Api.MaxTopK" @bind="_topK" disabled="@(_mode == QueryMode.Chat)" />
+        </div>
+
+        <button type="button" disabled="@_busy" @onclick="RunAsync">Run</button>
+    </section>
+
+    @if (!string.IsNullOrEmpty(_error))
+    {
+        <p class="err">@_error</p>
+    }
+
+    @if (_rag is not null)
+    {
+        @if (!string.IsNullOrEmpty(_rag.Answer))
+        {
+            <div class="answer">@_rag.Answer</div>
+        }
+        @if (!string.IsNullOrEmpty(_rag.Source))
+        {
+            <p class="meta">source: @_rag.Source</p>
+        }
+        @if (_rag.Citations.Count > 0)
+        {
+            <p class="legend">Citations</p>
+            @foreach (var c in _rag.Citations)
+            {
+                <div class="hit">
+                    <div class="src">@(c.Title ?? "") · @(c.SourceFile ?? "")</div>
+                </div>
+            }
+        }
+        @if (_rag.Hits.Count > 0)
+        {
+            <p class="legend">Hits</p>
+            @foreach (var h in _rag.Hits)
+            {
+                <div class="hit">
+                    <div class="src">@h.DisplaySource@(h.Score is double s ? $" · score {s}" : "")</div>
+                    @Snippet(h.Content)
+                </div>
+            }
+        }
+    }
+
+    @if (_search is not null)
+    {
+        <p class="meta">source: @(_search.Source ?? "")</p>
+        <p class="legend">Hits</p>
+        @foreach (var h in _search.Hits)
+        {
+            <div class="hit">
+                <div class="src">@h.DisplaySource@(h.Score is double s ? $" · score {s}" : "")</div>
+                @Snippet(h.Content)
+            </div>
+        }
+    }
+
+    @if (_chat is not null)
+    {
+        @if (!string.IsNullOrEmpty(_chat.Answer))
+        {
+            <div class="answer">@_chat.Answer</div>
+        }
+        <p class="meta">source: @(_chat.Source ?? "llm")</p>
+    }
+</main>
+
+@code {
+    private string _apiBase = "";
+    private string _apiKey = "";
+    private string _question = "";
+    private string _healthText = "Checking API…";
+    private string? _error;
+    private bool _busy;
+    private QueryMode _mode = QueryMode.Search;
+    private int _topK = 8;
+    private int _maxLen;
+    private int _maxTopK;
+    private SearchResponse? _search;
+    private RagResponse? _rag;
+    private ChatResponse? _chat;
+    private CancellationTokenSource? _cts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _apiBase = Api.ApiBaseUrl;
+        _apiKey = Preferences.Default.Get("QueryUi.ApiKey", "");
+        _maxLen = Api.MaxQuestionLength;
+        _maxTopK = Api.MaxTopK;
+        _topK = Math.Min(8, _maxTopK);
+        await PingHealthAsync();
+    }
+
+    private async Task SaveAndPingAsync()
+    {
+        _error = null;
+        try
+        {
+            Api.UpdateConnection(_apiBase, _apiKey);
+            await PingHealthAsync();
+        }
+        catch (Exception ex)
+        {
+            _healthText = "Not connected";
+            _error = ex.Message;
+        }
+    }
+
+    private async Task PingHealthAsync()
+    {
+        try
+        {
+            var h = await Api.GetHealthAsync();
+            if (string.Equals(h.Status, "ok", StringComparison.OrdinalIgnoreCase))
+            {
+                _healthText = $"{h.Profile} · {h.Index} · mode {h.Mode} · {Api.ApiBaseUrl}";
+                if (!string.Equals(h.Mode, "query", StringComparison.OrdinalIgnoreCase))
+                {
+                    _healthText += " ⚠ API is not in query-only mode — still blocked from ingest in this app";
+                }
+            }
+            else
+            {
+                _healthText = "API health unexpected";
+            }
+        }
+        catch
+        {
+            _healthText = $"Query API is not reachable at {Api.ApiBaseUrl}. Check the URL, network, and API key if demo hardening is enabled.";
+        }
+    }
+
+    private async Task RunAsync()
+    {
+        _error = null;
+        _search = null;
+        _rag = null;
+        _chat = null;
+        _busy = true;
+        _cts?.Cancel();
+        _cts = new CancellationTokenSource();
+        var ct = _cts.Token;
+
+        try
+        {
+            Api.UpdateConnection(_apiBase, _apiKey);
+
+            switch (_mode)
+            {
+                case QueryMode.Search:
+                    _search = await Api.SearchAsync(_question, _topK, ct);
+                    break;
+                case QueryMode.Rag:
+                    _rag = await Api.RagAsync(_question, _topK, ct);
+                    break;
+                case QueryMode.Chat:
+                    _chat = await Api.ChatAsync(_question, ct);
+                    break;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // ignored
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private static string Snippet(string? content)
+    {
+        if (string.IsNullOrEmpty(content)) return "";
+        return content.Length > 800 ? content[..800] + "…" : content;
+    }
+
+    public void Dispose()
+    {
+        _cts?.Cancel();
+        _cts?.Dispose();
+    }
+}

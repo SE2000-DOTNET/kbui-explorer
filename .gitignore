@@ -1,0 +1,129 @@
+# Visual Studio
+.vs/
+*.user
+*.suo 
+*.userosscache
+*.sln.docstates
+
+## Visual Studio Code
+.vscode/
+
+# Build folders
+bin/
+obj/
+[Bb]uild/
+[Ll]og/
+
+## MSBuild
+*.cache
+*.db
+*.mdb
+*.pdb
+
+# NuGet packages (if applicable)
+*.nupkg
+*.snupkg
+packages/
+*.nuget.props
+*.nuget.targets
+
+## Configuration
+appsettings.Development.json
+appsettings.Local.json
+appsettings.*.json
+
+## Publish output
+publish/
+publish-api/
+publish-api.zip
+out/
+
+# Rider
+.idea/
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
+
+# OS files
+Thumbs.db
+.DS_Store
+
+
+## ASP.NET temp files
+wwwroot/lib/
+wwwroot/dist/
+
+## Rider / JetBrains
+.idea/
+*.sln.iml
+
+## OS junk
+Thumbs.db
+.DS_Store
+ 
+
+## Other tooling
+*.coverage
+*.coveragexml
+TestResults/
+
+# Generated per-client config (from gen-env.ps1 / terraform.tfvars)
+config/generated/
+
+# Local CLI / REST identity (ingest paths, profile — never commit)
+kb-identity.json
+config.local.json
+config.local.json.*
+config.json
+config.json.*
+
+# ignore runtime/secret config
+/src/Rag_Ing_Tool.Cli/config/authoritative_sources.json
+
+# Local secrets / env overlays (never commit)
+.env
+.env.*
+!.env*.example
+!.env*.sample
+**/.env.local
+**/.env.local.ps1
+iac/env/
+secrets.json
+
+# Standalone UI local overrides (may contain demo API key)
+ui/config.local.js
+
+
+# Terraform (root safety net; see also iac/terraform/.gitignore)
+**/.terraform/
+**/*.tfstate
+**/*.tfstate.*
+**/*.tfplan
+**/backend.hcl
+# terraform.tfvars holds per-client KB values (may be committed).
+# Do not commit real subscription_id / tenant_id — CI sets TF_VAR_*.
+**/terraform.ci.tfvars
+**/terraform.dev.tfvars
+**/terraform.qa.tfvars
+**/terraform.uat.tfvars
+**/terraform.prod.tfvars
+**/*.auto.tfvars
+
+# Legacy folder from IAC rename (safe to delete if empty)
+IAC_KB_PerClient/
+
+# Local copies of failed/quarantined corpus files (do not commit HUD PDFs)
+ingest-review/**/*.pdf
+
+
+ 
+
+
+
+
+
+
+

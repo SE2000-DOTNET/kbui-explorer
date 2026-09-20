@@ -1,0 +1,27 @@
+* text=auto
+* text=auto eol=lf
+
+# Normalize C# source files to LF
+*.cs text eol=lf
+*.csproj text eol=lf
+*.sln text eol=lf
+
+# Normalize JSON and config files
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+
+# Normalize PowerShell scripts
+*.ps1 text eol=lf
+
+# Normalize Terraform and shell scripts
+*.tf text eol=lf
+*.hcl text eol=lf
+*.bsh text eol=lf
+
+# Binary files (never normalize)
+*.dll binary
+*.exe binary
+*.png binary
+*.jpg binary
+*.pdf binary

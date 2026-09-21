@@ -9,7 +9,8 @@
   --warn: #fbbf24;
 }
 
-html, body {
+html,
+body {
   margin: 0;
   font: 15px/1.45 system-ui, "Segoe UI", sans-serif;
   background: var(--bg);
@@ -74,7 +75,8 @@ html, body {
   margin: 0 0 0.75rem;
 }
 
-.meta, .hint {
+.meta,
+.hint {
   color: var(--muted);
   font-size: 0.85rem;
 }
@@ -101,14 +103,19 @@ html, body {
   margin-bottom: 1rem;
 }
 
-label, .legend {
+label,
+.legend {
   display: block;
   font-size: 0.8rem;
   color: var(--muted);
   margin-bottom: 0.35rem;
 }
 
-textarea, input[type="text"], input[type="password"], input[type="number"], input:not([type]) {
+textarea,
+input[type="text"],
+input[type="password"],
+input[type="number"],
+input:not([type]) {
   width: 100%;
   background: var(--panel);
   color: var(--text);
@@ -163,18 +170,98 @@ button:disabled {
   white-space: pre-wrap;
 }
 
-.answer, .hit {
+.answer-card,
+.hit {
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 0.85rem 1rem;
-  margin-top: 0.75rem;
-  white-space: pre-wrap;
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+  margin-top: 0.9rem;
   word-break: break-word;
+}
+
+.answer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.pill,
+.source-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  line-height: 1;
+  padding: 0.35rem 0.6rem;
+}
+
+.pill {
+  background: rgba(61, 139, 253, 0.14);
+  color: #dfeeff;
+  border: 1px solid rgba(61, 139, 253, 0.4);
+}
+
+.source-chip {
+  background: rgba(148, 163, 184, 0.12);
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+
+.markdown {
+  line-height: 1.65;
+}
+
+.markdown h1,
+.markdown h2,
+.markdown h3,
+.markdown h4 {
+  margin: 0.9rem 0 0.45rem;
+  line-height: 1.3;
+  color: #f3f6fb;
+}
+
+.markdown p,
+.markdown ul,
+.markdown ol,
+.markdown blockquote,
+.markdown pre {
+  margin: 0.6rem 0;
+}
+
+.markdown ul,
+.markdown ol {
+  padding-left: 1.5rem;
+}
+
+.markdown code {
+  background: rgba(148, 163, 184, 0.12);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  font-family: Consolas, "Courier New", monospace;
+}
+
+.markdown pre {
+  background: rgba(15, 20, 25, 0.7);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.8rem;
+  overflow-x: auto;
+}
+
+.markdown blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 0.9rem;
+  color: var(--muted);
 }
 
 .hit {
   font-size: 0.9rem;
+  white-space: pre-wrap;
 }
 
 .hit .src {

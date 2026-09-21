@@ -1,6 +1,7 @@
 ﻿@page "/"
 @using KBUI_Explorer.Models
 @using KBUI_Explorer.Services
+@using Markdig
 @inject QueryApiClient Api
 @implements IDisposable
 
@@ -11,107 +12,130 @@
         <h1>KBUI Explorer</h1>
         <p class="badge">Query-only · Rag_Ingestion_Tool</p>
         <p class="meta">@_healthText</p>
-        <p class="lock">This app can only call <code>/health</code>, <code>/search</code>, <code>/rag/query</code>, and <code>/chat</code>. Ingest and index admin are blocked.</p>
-    </header>
+        <p class="lock">This app can only call <code>/health</code>, <code>/search</code>, <code>/rag/query</code>, and
+            <code>/chat</code>. Ingest and index admin are blocked.</p>
+        </header>
 
-    <section class="panel settings">
-        <div class="row">
-            <label for="base">API base URL</label>
-            <input id="base" @bind="_apiBase" placeholder="https://app-q-cpy-hud-dev.azurewebsites.net" />
-        </div>
-        <div class="row">
-            <label for="key">API key (optional — required when API demo hardening is on)</label>
-            <input id="key" type="password" @bind="_apiKey" autocomplete="off" />
-        </div>
-        <button type="button" class="secondary" disabled="@_busy" @onclick="SaveAndPingAsync">Save &amp; check health</button>
-    </section>
-
-    <section class="panel">
-        <div class="row">
-            <label for="q">Question</label>
-            <textarea id="q" @bind="_question" maxlength="@Api.MaxQuestionLength" placeholder="What is the HOME program?" rows="4"></textarea>
-            <p class="hint">Max @_maxLen characters · Top K capped at @_maxTopK</p>
-        </div>
-
-        <div class="row">
-            <span class="legend">Call</span>
-            <div class="radios">
-                <InputRadioGroup @bind-Value="_mode">
-                    <label><InputRadio Value="@QueryMode.Search" /> Search KB</label>
-                    <label><InputRadio Value="@QueryMode.Rag" /> RAG</label>
-                    <label><InputRadio Value="@QueryMode.Chat" /> Chat only</label>
-                </InputRadioGroup>
+        <section class="panel settings">
+            <div class="row">
+                <label for="base">API base URL</label>
+                <input id="base" @bind="_apiBase" placeholder="https://app-q-cpy-hud-dev.azurewebsites.net" />
             </div>
-        </div>
-
-        <div class="row">
-            <label for="k">Top K (Search and RAG)</label>
-            <input id="k" type="number" min="1" max="@Api.MaxTopK" @bind="_topK" disabled="@(_mode == QueryMode.Chat)" />
-        </div>
-
-        <button type="button" disabled="@_busy" @onclick="RunAsync">Run</button>
-    </section>
-
-    @if (!string.IsNullOrEmpty(_error))
-    {
-        <p class="err">@_error</p>
-    }
-
-    @if (_rag is not null)
-    {
-        @if (!string.IsNullOrEmpty(_rag.Answer))
-        {
-            <div class="answer">@_rag.Answer</div>
-        }
-        @if (!string.IsNullOrEmpty(_rag.Source))
-        {
-            <p class="meta">source: @_rag.Source</p>
-        }
-        @if (_rag.Citations.Count > 0)
-        {
-            <p class="legend">Citations</p>
-            @foreach (var c in _rag.Citations)
-            {
-                <div class="hit">
-                    <div class="src">@(c.Title ?? "") · @(c.SourceFile ?? "")</div>
-                </div>
-            }
-        }
-        @if (_rag.Hits.Count > 0)
-        {
-            <p class="legend">Hits</p>
-            @foreach (var h in _rag.Hits)
-            {
-                <div class="hit">
-                    <div class="src">@h.DisplaySource@(h.Score is double s ? $" · score {s}" : "")</div>
-                    @Snippet(h.Content)
-                </div>
-            }
-        }
-    }
-
-    @if (_search is not null)
-    {
-        <p class="meta">source: @(_search.Source ?? "")</p>
-        <p class="legend">Hits</p>
-        @foreach (var h in _search.Hits)
-        {
-            <div class="hit">
-                <div class="src">@h.DisplaySource@(h.Score is double s ? $" · score {s}" : "")</div>
-                @Snippet(h.Content)
+            <div class="row">
+                <label for="key">API key (optional — required when API demo hardening is on)</label>
+                <input id="key" type="password" @bind="_apiKey" autocomplete="off" />
             </div>
-        }
-    }
+            <button type="button" class="secondary" disabled="@_busy" @onclick="SaveAndPingAsync">Save &amp; check
+                health</button>
+            </section>
 
-    @if (_chat is not null)
-    {
-        @if (!string.IsNullOrEmpty(_chat.Answer))
-        {
-            <div class="answer">@_chat.Answer</div>
-        }
-        <p class="meta">source: @(_chat.Source ?? "llm")</p>
-    }
-</main>
+            <section class="panel">
+                <div class="row">
+                    <label for="q">Question</label>
+                    <textarea id="q" @bind="_question" maxlength="@Api.MaxQuestionLength"
+                              placeholder="What is the HOME program?" rows="4"></textarea>
+                    <p class="hint">Max @_maxLen characters · Top K capped at @_maxTopK</p>
+                </div>
+
+                <div class="row">
+                    <span class="legend">Call</span>
+                    <div class="radios">
+                        <InputRadioGroup @bind-Value="_mode">
+                            <label>
+                                <InputRadio Value="@QueryMode.Search" /> Search KB
+                            </label>
+                            <label>
+                                <InputRadio Value="@QueryMode.Rag" /> RAG
+                            </label>
+                            <label>
+                                <InputRadio Value="@QueryMode.Chat" /> Chat only
+                            </label>
+                        </InputRadioGroup>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <label for="k">Top K (Search and RAG)</label>
+                    <input id="k" type="number" min="1" max="@Api.MaxTopK" @bind="_topK"
+                           disabled="@(_mode == QueryMode.Chat)" />
+                </div>
+
+                <button type="button" disabled="@_busy" @onclick="RunAsync">Run</button>
+            </section>
+
+            @if (!string.IsNullOrEmpty(_error))
+            {
+                <p class="err">@_error</p>
+            }
+
+            @if (_rag is not null)
+            {
+                @if (!string.IsNullOrEmpty(_rag.Answer))
+                {
+                    <div class="answer-card">
+                        <div class="answer-header">
+                            <span class="pill">Answer</span>
+                            @if (!string.IsNullOrEmpty(_rag.Source))
+                            {
+                                <span class="source-chip">@_rag.Source</span>
+                            }
+                        </div>
+                        <div class="markdown">@((MarkupString)ToHtml(_rag.Answer))</div>
+                    </div>
+                }
+                @if (_rag.Citations.Count > 0)
+                {
+                    <p class="legend">Citations</p>
+                    @foreach (var c in _rag.Citations)
+                    {
+                        <div class="hit">
+                            <div class="src">@(c.Title ?? "") · @(c.SourceFile ?? "")</div>
+                        </div>
+                    }
+                }
+                @if (_rag.Hits.Count > 0)
+                {
+                    <p class="legend">Hits</p>
+                    @foreach (var h in _rag.Hits)
+                    {
+                        <div class="hit">
+                            <div class="src">@h.DisplaySource@(h.Score is double s ? $" · score {s}" : "")</div>
+                            @Snippet(h.Content)
+                        </div>
+                    }
+                }
+            }
+
+            @if (_search is not null)
+            {
+                <p class="meta">source: @(_search.Source ?? "")</p>
+                <p class="legend">Hits</p>
+                @foreach (var h in _search.Hits)
+                {
+                    <div class="hit">
+                        <div class="src">@h.DisplaySource@(h.Score is double s ? $" · score {s}" : "")</div>
+                        @Snippet(h.Content)
+                    </div>
+                }
+            }
+
+            @if (_chat is not null)
+            {
+                @if (!string.IsNullOrEmpty(_chat.Answer))
+                {
+                    <div class="answer-card">
+                        <div class="answer-header">
+                            <span class="pill">Answer</span>
+                            @if (!string.IsNullOrEmpty(_chat.Source))
+                            {
+                                <span class="source-chip">@_chat.Source</span>
+                            }
+                        </div>
+                        <div class="markdown">@((MarkupString)ToHtml(_chat.Answer))</div>
+                    </div>
+                }
+            }
+        </main>
 
 @code {
     private string _apiBase = "";
@@ -218,6 +242,14 @@
         {
             _busy = false;
         }
+    }
+
+    private static string ToHtml(string? content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+            return "";
+
+        return Markdown.ToHtml(content);
     }
 
     private static string Snippet(string? content)

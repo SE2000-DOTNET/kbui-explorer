@@ -1,0 +1,43 @@
+name: Build and Validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build MAUI app
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Install MAUI Windows workload
+        shell: pwsh
+        run: dotnet workload install maui-windows --ignore-failed-sources
+
+      - name: Restore dependencies
+        run: dotnet restore KBUI_Explorer.csproj
+
+      - name: Build Windows target
+        run: dotnet build KBUI_Explorer.csproj -f net9.0-windows10.0.19041.0 --configuration Release --no-restore
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: KBUI-Explorer-build
+          path: bin/Release/net9.0-windows10.0.19041.0/win10-x64/**
+          if-no-files-found: error
+          retention-days: 7

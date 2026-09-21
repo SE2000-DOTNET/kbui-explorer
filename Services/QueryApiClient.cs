@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using KBUI_Explorer.Core;
 using KBUI_Explorer.Models;
 using KBUI_Explorer.Options;
 using Microsoft.Extensions.Options;
@@ -65,14 +66,10 @@ public sealed class QueryApiClient
 
     public string? ValidateQuestion(string? question)
     {
-        if (string.IsNullOrWhiteSpace(question))
-            return "question is required.";
-        if (question.Length > MaxQuestionLength)
-            return $"question exceeds max length ({MaxQuestionLength} characters).";
-        return null;
+        return QueryValidator.ValidateQuestion(question, MaxQuestionLength);
     }
 
-    public int ClampTopK(int topK) => Math.Clamp(topK, 1, MaxTopK);
+    public int ClampTopK(int topK) => QueryValidator.ClampTopK(topK, MaxTopK);
 
     public async Task<HealthResponse> GetHealthAsync(CancellationToken ct = default)
     {

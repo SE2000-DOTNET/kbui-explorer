@@ -38,4 +38,8 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.5" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="KBUI_Explorer.Core\KBUI_Explorer.Core.csproj" />
+  </ItemGroup>
+
 </Project>

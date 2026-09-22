@@ -42,4 +42,11 @@
     <ProjectReference Include="KBUI_Explorer.Core\KBUI_Explorer.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="tests\**\*.cs" />
+    <Compile Remove="KBUI_Explorer.Core\**\*.cs" />
+    <None Remove="tests\**\*" />
+    <None Remove="KBUI_Explorer.Core\**\*" />
+  </ItemGroup>
+
 </Project>

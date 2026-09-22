@@ -43,6 +43,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: KBUI-Explorer-build
-          path: bin/Release/net9.0-windows10.0.19041.0/win10-x64/**
+          path: bin/Release/net9.0-windows10.0.19041.0/win-x64/**
           if-no-files-found: error
           retention-days: 7

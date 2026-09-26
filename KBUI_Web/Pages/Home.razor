@@ -80,7 +80,6 @@
 
         @if (_rag is not null)
         {
-            <p class="legend">Actual RAG Request Sent to LLM</p>
             @if (!string.IsNullOrEmpty(_rag.Answer))
             {
                 <div class="answer-card">
@@ -94,6 +93,12 @@
                     <div class="markdown">@((MarkupString)ToHtml(_rag.Answer))</div>
                 </div>
             }
+
+            <p class="legend">Actual RAG Request Sent to LLM</p>
+            <div class="hit">
+                <pre>@_ragQuestionText</pre>
+            </div>
+
             @if (_rag.Citations.Count > 0)
             {
                 <p class="legend">Citations</p>
@@ -153,6 +158,7 @@
     private string _apiKey = "";
     private string _question = "";
     private string _healthText = "Checking API…";
+    private string _ragQuestionText = "";
     private string? _error;
     private bool _busy;
     private bool _isGitHubPages => Nav.BaseUri.Contains("github.io", StringComparison.OrdinalIgnoreCase);
@@ -223,6 +229,7 @@
         _search = null;
         _rag = null;
         _chat = null;
+        _ragQuestionText = "";
         _busy = true;
 
         try
@@ -235,6 +242,7 @@
                     _search = await Api.SearchAsync(_question, _topK);
                     break;
                 case QueryMode.Rag:
+                    _ragQuestionText = _question.Trim();
                     _rag = await Api.RagAsync(_question, _topK);
                     break;
                 case QueryMode.Chat:

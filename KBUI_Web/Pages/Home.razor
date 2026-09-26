@@ -3,31 +3,38 @@
 @using KBUI_Explorer.Services
 @using Markdig
 @inject QueryApiClient Api
+@inject NavigationManager Nav
 
 <PageTitle>KBUI Explorer</PageTitle>
 
 <main class="explorer">
     <header class="hero">
         <h1>KBUI Explorer</h1>
-        <p class="badge">Query-only · Rag_Ingestion_Tool</p>
-        <p class="meta">@_healthText</p>
-        <p class="lock">This app can only call <code>/health</code>, <code>/search</code>, <code>/rag/query</code>, and
-            <code>/chat</code>. Ingest and index admin are blocked.
-        </p>
+        @if (!_isGitHubPages)
+        {
+            <p class="badge">Query-only · Rag_Ingestion_Tool</p>
+            <p class="meta">@_healthText</p>
+            <p class="lock">This app can only call <code>/health</code>, <code>/search</code>, <code>/rag/query</code>, and
+                <code>/chat</code>. Ingest and index admin are blocked.
+            </p>
+        }
     </header>
 
-    <section class="panel settings">
-        <div class="row">
-            <label for="base">API base URL</label>
-            <input id="base" @bind="_apiBase" placeholder="https://app-q-cpy-hud-dev.azurewebsites.net" />
-        </div>
-        <div class="row">
-            <label for="key">API key (optional — required when API demo hardening is on)</label>
-            <input id="key" type="password" @bind="_apiKey" autocomplete="off" />
-        </div>
-        <button type="button" class="secondary" disabled="@_busy" @onclick="SaveAndPingAsync">Save &amp; check
-            health</button>
-        </section>
+    @if (!_isGitHubPages)
+    {
+        <section class="panel settings">
+            <div class="row">
+                <label for="base">API base URL</label>
+                <input id="base" @bind="_apiBase" placeholder="https://app-q-cpy-hud-dev.azurewebsites.net" />
+            </div>
+            <div class="row">
+                <label for="key">API key (optional — required when API demo hardening is on)</label>
+                <input id="key" type="password" @bind="_apiKey" autocomplete="off" />
+            </div>
+            <button type="button" class="secondary" disabled="@_busy" @onclick="SaveAndPingAsync">Save &amp; check
+                health</button>
+            </section>
+        }
 
         <section class="panel">
             <div class="row">
@@ -41,9 +48,12 @@
                 <span class="legend">Call</span>
                 <div class="radios">
                     <InputRadioGroup @bind-Value="_mode">
-                        <label>
-                            <InputRadio Value="@QueryMode.Search" /> Search KB
-                        </label>
+                        @if (!_isGitHubPages)
+                        {
+                            <label>
+                                <InputRadio Value="@QueryMode.Search" /> Search KB
+                            </label>
+                        }
                         <label>
                             <InputRadio Value="@QueryMode.Rag" /> RAG
                         </label>
@@ -70,6 +80,7 @@
 
         @if (_rag is not null)
         {
+            <p class="legend">Actual RAG Request Sent to LLM</p>
             @if (!string.IsNullOrEmpty(_rag.Answer))
             {
                 <div class="answer-card">
@@ -144,8 +155,9 @@
     private string _healthText = "Checking API…";
     private string? _error;
     private bool _busy;
+    private bool _isGitHubPages => Nav.BaseUri.Contains("github.io", StringComparison.OrdinalIgnoreCase);
     private QueryMode _mode = QueryMode.Search;
-    private int _topK = 8;
+    private int _topK = 3;
     private int _maxLen;
     private int _maxTopK;
     private SearchResponse? _search;
@@ -158,8 +170,12 @@
         _apiKey = Api.ApiKey;
         _maxLen = Api.MaxQuestionLength;
         _maxTopK = Api.MaxTopK;
-        _topK = Math.Min(8, _maxTopK);
-        await PingHealthAsync();
+        _topK = Math.Min(3, _maxTopK);
+
+        if (!_isGitHubPages)
+        {
+            await PingHealthAsync();
+        }
     }
 
     private async Task SaveAndPingAsync()

@@ -1,0 +1,74 @@
+@page "/help"
+@page "/how-to-use"
+
+<PageTitle>How to use KBUI Explorer</PageTitle>
+
+<main class="container py-4">
+    <h1>How to start and use KBUI Explorer</h1>
+
+    <section class="mb-4">
+        <h2>1. Start the application</h2>
+        <ol>
+            <li>Open a terminal in the project root.</li>
+            <li>Restore dependencies:</li>
+        </ol>
+        <pre><code>dotnet restore</code></pre>
+
+        <ol start="3">
+            <li>Start the app:</li>
+        </ol>
+        <pre><code>dotnet run --project KBUI_Web/KBUI_Web.csproj</code></pre>
+
+        <p>
+            The app will launch in your browser at a local URL such as <code>https://localhost:xxxx</code>
+            or <code>http://localhost:xxxx</code>.
+        </p>
+    </section>
+
+    <section class="mb-4">
+        <h2>2. Connect to the API</h2>
+        <p>
+            On the home page, enter the API base URL for the query service and, if needed, the optional API key.
+            Then click <strong>Save &amp; check health</strong>.
+        </p>
+        <ul>
+            <li><strong>API base URL</strong>: the backend endpoint, for example a deployed Azure App Service URL.</li>
+            <li><strong>API key</strong>: optional and only needed when the backend enforces demo hardening.</li>
+        </ul>
+        <p>
+            If the health check fails, verify the URL, network access, and whether the API is running and reachable.
+        </p>
+    </section>
+
+    <section class="mb-4">
+        <h2>3. Ask a question</h2>
+        <p>Once the app is connected, enter a question in the text box and choose a mode:</p>
+        <ul>
+            <li><strong>Search KB</strong>: returns matching knowledge-base hits.</li>
+            <li><strong>RAG</strong>: uses retrieval + generation to answer the question.</li>
+            <li><strong>Chat only</strong>: sends a chat-style prompt without retrieval.</li>
+        </ul>
+        <p>
+            Use the <strong>Top K</strong> box for search and RAG results, then click <strong>Run</strong>.
+        </p>
+    </section>
+
+    <section class="mb-4">
+        <h2>4. Read the results</h2>
+        <p>The returned view may include:</p>
+        <ul>
+            <li>An answer card with the generated response.</li>
+            <li>Matching hits and snippets from the knowledge base.</li>
+            <li>Citations and source information when available.</li>
+        </ul>
+    </section>
+
+    <section class="mb-4">
+        <h2>5. Important restrictions</h2>
+        <p>
+            This app is intentionally <strong>query-only</strong>. It can only call the read endpoints allowed by the
+            backend, such as <code>/health</code>, <code>/search</code>, <code>/rag/query</code>, and <code>/chat</code>.
+            Ingest and index-admin actions are blocked by design.
+        </p>
+    </section>
+</main>

@@ -98,9 +98,14 @@
                         <h2 class="legend">End citation</h2>
                         @foreach (var c in endCitations)
                         {
-                            <aside class="end-citation" aria-label="End citation">
-                                <strong>@(string.IsNullOrWhiteSpace(c.Title) ? "OS guidance" : c.Title)</strong>
-                                <span class="src">@(c.DisplaySourceFile ?? "")</span>
+                            <aside class="end-citation" aria-label="RAG request">
+                                <span class="pill">End citation</span>
+                                <strong>@(string.IsNullOrWhiteSpace(c.Title) ? "RAG request" : c.Title)</strong>
+                                <span class="src">@(c.DisplaySourceFile ?? "rag://request")</span>
+                                @if (!string.IsNullOrWhiteSpace(c.Content))
+                                {
+                                    <pre>@c.Content</pre>
+                                }
                             </aside>
                         }
                     </div>

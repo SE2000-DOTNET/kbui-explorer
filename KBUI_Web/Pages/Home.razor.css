@@ -44,3 +44,10 @@
     font-family: Consolas, monospace;
     font-size: 0.9rem;
 }
+
+.end-citation pre {
+    flex-basis: 100%;
+    margin: 0.5rem 0 0;
+    white-space: pre-wrap;
+    font-size: 0.85rem;
+}

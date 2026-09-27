@@ -90,13 +90,19 @@ public sealed class Citation
     [JsonPropertyName("isSpecial")]
     public bool IsSpecialCamel { get; set; }
 
+    [JsonPropertyName("content")]
+    public string? Content { get; set; }
+
     public string? DisplaySourceFile => SourceFile ?? SourceFileCamel;
 
     public bool IsEndCitation =>
         IsSpecial
         || IsSpecialCamel
+        || string.Equals(Kind, "rag_request", StringComparison.OrdinalIgnoreCase)
         || string.Equals(Kind, "os", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(DisplaySourceFile, "rag://request", StringComparison.OrdinalIgnoreCase)
         || string.Equals(DisplaySourceFile, "system://os", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Title, "RAG request", StringComparison.OrdinalIgnoreCase)
         || string.Equals(Title, "OS guidance", StringComparison.OrdinalIgnoreCase);
 }
 

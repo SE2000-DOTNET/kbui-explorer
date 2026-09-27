@@ -96,7 +96,7 @@ public sealed class QueryApiClient : IDisposable
         var body = new SearchRequest { Question = question.Trim(), TopK = ClampTopK(topK) };
         using var response = await SendAsync(HttpMethod.Post, "/rag/query", body, ct);
         var rag = await ReadAsync<RagResponse>(response, ct);
-        EnsureSpecialEndCitation(rag);
+        EnsureRagRequestCitation(rag, question, topK);
         return rag;
     }
 
@@ -181,18 +181,41 @@ public sealed class QueryApiClient : IDisposable
         return false;
     }
 
-    private static void EnsureSpecialEndCitation(RagResponse rag)
+    private static void EnsureRagRequestCitation(RagResponse rag, string question, int topK)
     {
-        if (rag.Citations.Any(c => c.IsEndCitation))
+        var existing = rag.Citations.FirstOrDefault(c => c.IsEndCitation);
+        if (existing is not null)
+        {
+            if (string.IsNullOrWhiteSpace(existing.Content))
+                existing.Content = BuildRagRequestText(question, topK, rag);
+            if (string.Equals(existing.Title, "OS guidance", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(existing.DisplaySourceFile, "system://os", StringComparison.OrdinalIgnoreCase))
+            {
+                existing.Title = "RAG request";
+                existing.SourceFile = "rag://request";
+                existing.Kind = "rag_request";
+                existing.IsSpecial = true;
+                existing.Content = BuildRagRequestText(question, topK, rag);
+            }
             return;
+        }
 
         rag.Citations.Add(new Citation
         {
-            Title = "OS guidance",
-            SourceFile = "system://os",
-            Kind = "os",
-            IsSpecial = true
+            Title = "RAG request",
+            SourceFile = "rag://request",
+            Kind = "rag_request",
+            IsSpecial = true,
+            Content = BuildRagRequestText(question, topK, rag)
         });
+    }
+
+    private static string BuildRagRequestText(string question, int topK, RagResponse rag)
+    {
+        var passages = rag.Hits.Count == 0
+            ? "(no passages)"
+            : string.Join("\n\n", rag.Hits.Select(h => $"{h.DisplaySource}\n{h.Content}"));
+        return $"Question:\n{question.Trim()}\n\nTopK: {topK}\n\nPassages:\n{passages}";
     }
 
     private static async Task<T> ReadAsync<T>(HttpResponseMessage response, CancellationToken ct)

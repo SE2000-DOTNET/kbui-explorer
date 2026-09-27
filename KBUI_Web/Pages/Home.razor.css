@@ -1,0 +1,46 @@
+.call-line {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 1rem;
+    white-space: nowrap;
+}
+
+.call-line .legend {
+    margin: 0;
+}
+
+.call-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0;
+    white-space: nowrap;
+}
+
+.end-citation {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem 0.75rem;
+    margin: 0.75rem 0 1.25rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid #c5a35a;
+    background: #fff8e8;
+    border-radius: 8px;
+}
+
+.end-citation .pill {
+    background: #8a5a00;
+    color: #fff;
+    font-size: 0.75rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+}
+
+.end-citation .src {
+    color: #5c4a1f;
+    font-family: Consolas, monospace;
+    font-size: 0.9rem;
+}

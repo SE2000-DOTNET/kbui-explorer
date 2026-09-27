@@ -72,8 +72,32 @@ public sealed class Citation
     [JsonPropertyName("source_file")]
     public string? SourceFile { get; set; }
 
+    [JsonPropertyName("sourceFile")]
+    public string? SourceFileCamel { get; set; }
+
+    [JsonPropertyName("icd10_code")]
+    public string? Icd10Code { get; set; }
+
     [JsonPropertyName("score")]
     public double? Score { get; set; }
+
+    [JsonPropertyName("kind")]
+    public string? Kind { get; set; }
+
+    [JsonPropertyName("is_special")]
+    public bool IsSpecial { get; set; }
+
+    [JsonPropertyName("isSpecial")]
+    public bool IsSpecialCamel { get; set; }
+
+    public string? DisplaySourceFile => SourceFile ?? SourceFileCamel;
+
+    public bool IsEndCitation =>
+        IsSpecial
+        || IsSpecialCamel
+        || string.Equals(Kind, "os", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(DisplaySourceFile, "system://os", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Title, "OS guidance", StringComparison.OrdinalIgnoreCase);
 }
 
 public sealed class SearchResponse

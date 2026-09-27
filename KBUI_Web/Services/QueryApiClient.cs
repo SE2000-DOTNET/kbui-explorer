@@ -4,6 +4,8 @@ using System.Text.Json.Serialization;
 using KBUI_Explorer.Core;
 using KBUI_Explorer.Models;
 using KBUI_Explorer.Options;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.WebAssembly.Http;
 using Microsoft.Extensions.Options;
 
 namespace KBUI_Explorer.Services;
@@ -12,7 +14,7 @@ namespace KBUI_Explorer.Services;
 /// Restricted HTTP client for Rag_Ingestion_Tool query endpoints only.
 /// Hard-blocks ingest, index delete, and job APIs — this app cannot call them.
 /// </summary>
-public sealed class QueryApiClient
+public sealed class QueryApiClient : IDisposable
 {
     private static readonly HashSet<string> AllowedPaths = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -29,10 +31,14 @@ public sealed class QueryApiClient
     };
 
     private readonly QueryUiOptions _options;
+    private readonly NavigationManager _nav;
+    private HttpClient? _client;
+    private string _clientBase = "";
 
-    public QueryApiClient(IOptions<QueryUiOptions> options)
+    public QueryApiClient(IOptions<QueryUiOptions> options, NavigationManager nav)
     {
         _options = options.Value;
+        _nav = nav;
     }
 
     public string ApiBaseUrl => (_options.ApiBaseUrl ?? "").TrimEnd('/');
@@ -56,6 +62,7 @@ public sealed class QueryApiClient
 
         _options.ApiBaseUrl = url;
         _options.ApiKey = (apiKey ?? "").Trim();
+        ResetClient();
     }
 
     public string? ValidateQuestion(string? question)
@@ -101,6 +108,31 @@ public sealed class QueryApiClient
         return await ReadAsync<ChatResponse>(response, ct);
     }
 
+    public void Dispose()
+    {
+        ResetClient();
+    }
+
+    private HttpClient GetClient()
+    {
+        var baseUrl = ApiBaseUrl.TrimEnd('/') + "/";
+        if (_client is null || !string.Equals(_clientBase, baseUrl, StringComparison.Ordinal))
+        {
+            ResetClient();
+            _client = new HttpClient { BaseAddress = new Uri(baseUrl) };
+            _clientBase = baseUrl;
+        }
+
+        return _client;
+    }
+
+    private void ResetClient()
+    {
+        _client?.Dispose();
+        _client = null;
+        _clientBase = "";
+    }
+
     private async Task<HttpResponseMessage> SendAsync(HttpMethod method, string path, object? body, CancellationToken ct)
     {
         if (!AllowedPaths.Contains(path))
@@ -109,19 +141,42 @@ public sealed class QueryApiClient
         if (path.Contains("..", StringComparison.Ordinal) || path.Contains("://", StringComparison.Ordinal) || !path.StartsWith('/'))
             throw new InvalidOperationException("Blocked: invalid path.");
 
-        using var client = new HttpClient
-        {
-            BaseAddress = new Uri(ApiBaseUrl.TrimEnd('/') + "/")
-        };
-
+        var client = GetClient();
         using var request = new HttpRequestMessage(method, path.TrimStart('/'));
+        request.SetBrowserRequestCredentials(BrowserRequestCredentials.Omit);
+        request.SetBrowserRequestMode(BrowserRequestMode.Cors);
+
         if (!string.IsNullOrWhiteSpace(_options.ApiKey))
             request.Headers.TryAddWithoutValidation("X-Api-Key", _options.ApiKey);
 
         if (body is not null)
             request.Content = JsonContent.Create(body, options: JsonOptions);
 
-        return await client.SendAsync(request, ct);
+        try
+        {
+            return await client.SendAsync(request, ct);
+        }
+        catch (Exception ex) when (IsBrowserFetchFailure(ex))
+        {
+            var origin = new Uri(_nav.BaseUri).GetLeftPart(UriPartial.Authority);
+            throw new InvalidOperationException(
+                $"Could not reach {ApiBaseUrl}{path} from this page. " +
+                $"Azure CORS must allow this exact origin: {origin} (no path or trailing slash). " +
+                "In the App Service go to API → CORS and add that origin plus https://se2000-dotnet.github.io. " +
+                "Allow methods GET, POST, OPTIONS and header Content-Type (and X-Api-Key if the API requires a key).",
+                ex);
+        }
+    }
+
+    private static bool IsBrowserFetchFailure(Exception ex)
+    {
+        for (var current = ex; current is not null; current = current.InnerException)
+        {
+            if (current.Message.Contains("Failed to fetch", StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        return false;
     }
 
     private static async Task<T> ReadAsync<T>(HttpResponseMessage response, CancellationToken ct)

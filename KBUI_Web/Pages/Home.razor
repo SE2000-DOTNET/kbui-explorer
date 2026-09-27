@@ -10,10 +10,10 @@
 <main class="explorer">
     <header class="hero">
         <h1>KBUI Explorer</h1>
+        <p class="badge">Query-only · Rag_Ingestion_Tool</p>
+        <p class="meta">@_healthText</p>
         @if (!_isGitHubPages)
         {
-            <p class="badge">Query-only · Rag_Ingestion_Tool</p>
-            <p class="meta">@_healthText</p>
             <p class="lock">This app can only call <code>/health</code>, <code>/search</code>, <code>/rag/query</code>, and
                 <code>/chat</code>. Ingest and index admin are blocked.
             </p>
@@ -47,18 +47,16 @@
                           placeholder="What is the HOME program?" rows="4"></textarea>
             </div>
 
-            <div class="row" style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
-                <span class="legend" style="margin:0;">Call</span>
-                <div class="radios" style="display:flex; gap:1rem; flex-wrap:wrap;">
-                    <InputRadioGroup @bind-Value="_mode">
-                        <label>
-                            <InputRadio Value="@QueryMode.Rag" /> RAG
-                        </label>
-                        <label>
-                            <InputRadio Value="@QueryMode.Chat" /> Chat only
-                        </label>
-                    </InputRadioGroup>
-                </div>
+            <div class="call-line">
+                <span class="legend">Call</span>
+                <InputRadioGroup @bind-Value="_mode">
+                    <label class="call-option">
+                        <InputRadio Value="@QueryMode.Rag" /> RAG
+                    </label>
+                    <label class="call-option">
+                        <InputRadio Value="@QueryMode.Chat" /> Chat only
+                    </label>
+                </InputRadioGroup>
             </div>
 
             <button type="button" disabled="@_busy" @onclick="RunAsync">Run</button>
@@ -71,99 +69,138 @@
 
         @if (_rag is not null)
         {
-            @if (!string.IsNullOrEmpty(_rag.Answer))
-            {
-                <div class="answer-card">
-                    <div class="answer-header">
-                        <span class="pill">Answer</span>
-                        @if (!string.IsNullOrEmpty(_rag.Source))
-                        {
-                            <span class="source-chip">@_rag.Source</span>
-                        }
-                    </div>
-                    <div class="markdown">@((MarkupString)ToHtml(_rag.Answer))</div>
-                </div>
-            }
-
             var finalPrompt = GetFinalPrompt(_rag);
             var retrievedContext = GetRetrievedContext(_rag);
             var messagesText = GetMessagesText(_rag);
+            var documentCitations = DocumentCitations(_rag);
+            var endCitations = EndCitations(_rag);
 
-            @if (!string.IsNullOrWhiteSpace(finalPrompt))
-            {
-                <p class="legend">Final Azure prompt</p>
-                <div class="hit">
-                    <pre>@finalPrompt</pre>
+            <section class="results-card" aria-label="RAG results">
+                <div class="results-header">
+                    <span class="pill">RAG result</span>
+                    @if (!string.IsNullOrEmpty(_rag.Source))
+                    {
+                        <span class="source-chip">@_rag.Source</span>
+                    }
                 </div>
-            }
 
-            @if (!string.IsNullOrWhiteSpace(retrievedContext))
-            {
-                <p class="legend">Retrieved context sent to model</p>
-                <div class="hit">
-                    <pre>@retrievedContext</pre>
-                </div>
-            }
-
-            @if (!string.IsNullOrWhiteSpace(messagesText))
-            {
-                <p class="legend">System prompt / messages</p>
-                <div class="hit">
-                    <pre>@messagesText</pre>
-                </div>
-            }
-
-            @if (_rag.Citations.Count > 0)
-            {
-                <p class="legend">Citations</p>
-                @foreach (var c in _rag.Citations)
+                @if (!string.IsNullOrEmpty(_rag.Answer))
                 {
-                    <div class="hit">
-                        <div class="src">@(c.Title ?? "") · @(c.SourceFile ?? "")</div>
+                    <div class="results-block">
+                        <h2 class="legend">Answer</h2>
+                        <div class="markdown">@((MarkupString)ToHtml(_rag.Answer))</div>
                     </div>
                 }
-            }
-            @if (_rag.Hits.Count > 0)
-            {
-                <p class="legend">Hits</p>
-                @foreach (var h in _rag.Hits)
+
+                @if (endCitations.Count > 0)
                 {
-                    <div class="hit">
-                        <div class="src">@h.DisplaySource@(h.Score is double s ? $" · score {s}" : "")</div>
-                        @Snippet(h.Content)
+                    <div class="results-block">
+                        <h2 class="legend">End citation</h2>
+                        @foreach (var c in endCitations)
+                        {
+                            <aside class="end-citation" aria-label="End citation">
+                                <strong>@(string.IsNullOrWhiteSpace(c.Title) ? "OS guidance" : c.Title)</strong>
+                                <span class="src">@(c.DisplaySourceFile ?? "")</span>
+                            </aside>
+                        }
                     </div>
                 }
-            }
+
+                @if (documentCitations.Count > 0)
+                {
+                    <div class="results-block">
+                        <h2 class="legend">Citations</h2>
+                        @foreach (var c in documentCitations)
+                        {
+                            <div class="hit">
+                                <div class="src">@(c.Title ?? "") · @(c.DisplaySourceFile ?? "")</div>
+                            </div>
+                        }
+                    </div>
+                }
+
+                @if (_rag.Hits.Count > 0)
+                {
+                    <div class="results-block">
+                        <h2 class="legend">Hits</h2>
+                        @foreach (var h in _rag.Hits)
+                        {
+                            <div class="hit">
+                                <div class="src">@h.DisplaySource@(h.Score is double s ? $" · score {s}" : "")</div>
+                                @Snippet(h.Content)
+                            </div>
+                        }
+                    </div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(finalPrompt) || !string.IsNullOrWhiteSpace(retrievedContext) || !string.IsNullOrWhiteSpace(messagesText))
+                {
+                    <div class="results-block details">
+                        <h2 class="legend">Prompt details</h2>
+                        @if (!string.IsNullOrWhiteSpace(finalPrompt))
+                        {
+                            <p class="legend">Final Azure prompt</p>
+                            <div class="hit">
+                                <pre>@finalPrompt</pre>
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(retrievedContext))
+                        {
+                            <p class="legend">Retrieved context sent to model</p>
+                            <div class="hit">
+                                <pre>@retrievedContext</pre>
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(messagesText))
+                        {
+                            <p class="legend">System prompt / messages</p>
+                            <div class="hit">
+                                <pre>@messagesText</pre>
+                            </div>
+                        }
+                    </div>
+                }
+            </section>
         }
 
         @if (_search is not null)
         {
-            <p class="meta">source: @(_search.Source ?? "")</p>
-            <p class="legend">Hits</p>
-            @foreach (var h in _search.Hits)
-            {
-                <div class="hit">
-                    <div class="src">@h.DisplaySource@(h.Score is double s ? $" · score {s}" : "")</div>
-                    @Snippet(h.Content)
+            <section class="results-card" aria-label="Search results">
+                <div class="results-header">
+                    <span class="pill">Search result</span>
+                    @if (!string.IsNullOrEmpty(_search.Source))
+                    {
+                        <span class="source-chip">@_search.Source</span>
+                    }
                 </div>
-            }
+                <div class="results-block">
+                    <h2 class="legend">Hits</h2>
+                    @foreach (var h in _search.Hits)
+                    {
+                        <div class="hit">
+                            <div class="src">@h.DisplaySource@(h.Score is double s ? $" · score {s}" : "")</div>
+                            @Snippet(h.Content)
+                        </div>
+                    }
+                </div>
+            </section>
         }
 
-        @if (_chat is not null)
+        @if (_chat is not null && !string.IsNullOrEmpty(_chat.Answer))
         {
-            @if (!string.IsNullOrEmpty(_chat.Answer))
-            {
-                <div class="answer-card">
-                    <div class="answer-header">
-                        <span class="pill">Answer</span>
-                        @if (!string.IsNullOrEmpty(_chat.Source))
-                        {
-                            <span class="source-chip">@_chat.Source</span>
-                        }
-                    </div>
+            <section class="results-card" aria-label="Chat results">
+                <div class="results-header">
+                    <span class="pill">Chat result</span>
+                    @if (!string.IsNullOrEmpty(_chat.Source))
+                    {
+                        <span class="source-chip">@_chat.Source</span>
+                    }
+                </div>
+                <div class="results-block">
+                    <h2 class="legend">Answer</h2>
                     <div class="markdown">@((MarkupString)ToHtml(_chat.Answer))</div>
                 </div>
-            }
+            </section>
         }
     </main>
 
@@ -176,7 +213,7 @@
     private string? _error;
     private bool _busy;
     private bool _isGitHubPages => Nav.BaseUri.Contains("github.io", StringComparison.OrdinalIgnoreCase);
-    private QueryMode _mode = QueryMode.Search;
+    private QueryMode _mode = QueryMode.Rag;
     private int _topK = 3;
     private int _maxLen;
     private int _maxTopK;
@@ -191,11 +228,7 @@
         _maxLen = Api.MaxQuestionLength;
         _maxTopK = Api.MaxTopK;
         _topK = Math.Min(3, _maxTopK);
-
-        if (!_isGitHubPages)
-        {
-            await PingHealthAsync();
-        }
+        await PingHealthAsync();
     }
 
     private async Task SaveAndPingAsync()
@@ -231,9 +264,10 @@
                 _healthText = "API health unexpected";
             }
         }
-        catch
+        catch (Exception ex)
         {
-            _healthText = $"Query API is not reachable at {Api.ApiBaseUrl}. Check the URL, network, and API key if demo hardening is enabled.";
+            _healthText = $"Query API is not reachable at {Api.ApiBaseUrl}.";
+            _error = ex.Message;
         }
     }
 
@@ -248,7 +282,10 @@
 
         try
         {
-            Api.UpdateConnection(_apiBase, _apiKey);
+            if (!_isGitHubPages)
+            {
+                Api.UpdateConnection(_apiBase, _apiKey);
+            }
 
             switch (_mode)
             {
@@ -273,6 +310,12 @@
             _busy = false;
         }
     }
+
+    private static List<Citation> EndCitations(RagResponse rag) =>
+        rag.Citations.Where(c => c.IsEndCitation).ToList();
+
+    private static List<Citation> DocumentCitations(RagResponse rag) =>
+        rag.Citations.Where(c => !c.IsEndCitation).ToList();
 
     private string GetFinalPrompt(RagResponse rag)
     {

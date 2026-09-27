@@ -95,7 +95,7 @@ https://<your-github-username>.github.io/<your-repository-name>/
 Example for this repo if it is published under the GitHub user or org named hperson:
 
 ```text
-https://github.com/SE2000-DOTNET/kbui-explorer.git
+https://se2000-dotnet.github.io/kbui-explorer/
 ```
 
 Replace hperson with the actual GitHub username or organization that owns the repository.

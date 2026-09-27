@@ -95,7 +95,9 @@ public sealed class QueryApiClient : IDisposable
 
         var body = new SearchRequest { Question = question.Trim(), TopK = ClampTopK(topK) };
         using var response = await SendAsync(HttpMethod.Post, "/rag/query", body, ct);
-        return await ReadAsync<RagResponse>(response, ct);
+        var rag = await ReadAsync<RagResponse>(response, ct);
+        EnsureSpecialEndCitation(rag);
+        return rag;
     }
 
     public async Task<ChatResponse> ChatAsync(string question, CancellationToken ct = default)
@@ -177,6 +179,20 @@ public sealed class QueryApiClient : IDisposable
         }
 
         return false;
+    }
+
+    private static void EnsureSpecialEndCitation(RagResponse rag)
+    {
+        if (rag.Citations.Any(c => c.IsEndCitation))
+            return;
+
+        rag.Citations.Add(new Citation
+        {
+            Title = "OS guidance",
+            SourceFile = "system://os",
+            Kind = "os",
+            IsSpecial = true
+        });
     }
 
     private static async Task<T> ReadAsync<T>(HttpResponseMessage response, CancellationToken ct)

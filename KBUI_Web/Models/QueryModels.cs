@@ -85,6 +85,15 @@ public sealed class SearchResponse
     public List<SearchHit> Hits { get; set; } = new();
 }
 
+public sealed class PromptMessage
+{
+    [JsonPropertyName("role")]
+    public string? Role { get; set; }
+
+    [JsonPropertyName("content")]
+    public string? Content { get; set; }
+}
+
 public sealed class RagResponse
 {
     [JsonPropertyName("answer")]
@@ -98,6 +107,30 @@ public sealed class RagResponse
 
     [JsonPropertyName("hits")]
     public List<SearchHit> Hits { get; set; } = new();
+
+    [JsonPropertyName("final_prompt")]
+    public string? FinalPrompt { get; set; }
+
+    [JsonPropertyName("prompt")]
+    public string? Prompt { get; set; }
+
+    [JsonPropertyName("prompt_text")]
+    public string? PromptText { get; set; }
+
+    [JsonPropertyName("azure_prompt")]
+    public string? AzurePrompt { get; set; }
+
+    [JsonPropertyName("context_text")]
+    public string? ContextText { get; set; }
+
+    [JsonPropertyName("retrieved_context")]
+    public string? RetrievedContext { get; set; }
+
+    [JsonPropertyName("system_prompt")]
+    public string? SystemPrompt { get; set; }
+
+    [JsonPropertyName("messages")]
+    public List<PromptMessage> Messages { get; set; } = new();
 }
 
 public sealed class ChatResponse

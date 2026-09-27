@@ -85,10 +85,33 @@
                 </div>
             }
 
-            <p class="legend">Actual RAG Request Sent to LLM</p>
-            <div class="hit">
-                <pre>@_ragQuestionText</pre>
-            </div>
+            var finalPrompt = GetFinalPrompt(_rag);
+            var retrievedContext = GetRetrievedContext(_rag);
+            var messagesText = GetMessagesText(_rag);
+
+            @if (!string.IsNullOrWhiteSpace(finalPrompt))
+            {
+                <p class="legend">Final Azure prompt</p>
+                <div class="hit">
+                    <pre>@finalPrompt</pre>
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(retrievedContext))
+            {
+                <p class="legend">Retrieved context sent to model</p>
+                <div class="hit">
+                    <pre>@retrievedContext</pre>
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(messagesText))
+            {
+                <p class="legend">System prompt / messages</p>
+                <div class="hit">
+                    <pre>@messagesText</pre>
+                </div>
+            }
 
             @if (_rag.Citations.Count > 0)
             {
@@ -249,6 +272,53 @@
         {
             _busy = false;
         }
+    }
+
+    private string GetFinalPrompt(RagResponse rag)
+    {
+        var promptText = FirstNonEmpty(
+            rag.FinalPrompt,
+            rag.AzurePrompt,
+            rag.Prompt,
+            rag.PromptText,
+            rag.SystemPrompt,
+            rag.Messages.Count > 0 ? string.Join("\n\n", rag.Messages.Select(m => $"[{m.Role ?? "role"}]\n{m.Content ?? ""}")) :
+null,
+            _ragQuestionText);
+
+        return promptText;
+    }
+
+    private static string GetRetrievedContext(RagResponse rag)
+    {
+        return FirstNonEmpty(rag.ContextText, rag.RetrievedContext);
+    }
+
+    private string GetMessagesText(RagResponse rag)
+    {
+        if (!string.IsNullOrWhiteSpace(rag.SystemPrompt))
+        {
+            if (rag.Messages.Count == 0)
+                return rag.SystemPrompt;
+
+            return string.Join("\n\n", rag.Messages.Select(m => $"[{m.Role ?? "role"}]\n{m.Content ?? ""}"));
+        }
+
+        if (rag.Messages.Count == 0)
+            return string.Empty;
+
+        return string.Join("\n\n", rag.Messages.Select(m => $"[{m.Role ?? "role"}]\n{m.Content ?? ""}"));
+    }
+
+    private static string FirstNonEmpty(params string?[] values)
+    {
+        foreach (var value in values)
+        {
+            if (!string.IsNullOrWhiteSpace(value))
+                return value;
+        }
+
+        return string.Empty;
     }
 
     private static string ToHtml(string? content)

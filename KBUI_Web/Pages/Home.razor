@@ -38,22 +38,19 @@
 
         <section class="panel">
             <div class="row">
-                <label for="q">Question</label>
+                <div
+                    style="display:flex; justify-content:space-between; align-items:center; gap:0.75rem; margin-bottom:0.5rem;">
+                    <label for="q" style="margin:0;">Question</label>
+                    <span class="hint" style="margin:0;">Max @_maxLen characters</span>
+                </div>
                 <textarea id="q" @bind="_question" maxlength="@Api.MaxQuestionLength"
                           placeholder="What is the HOME program?" rows="4"></textarea>
-                <p class="hint">Max @_maxLen characters · Top K capped at @_maxTopK</p>
             </div>
 
-            <div class="row">
-                <span class="legend">Call</span>
-                <div class="radios">
+            <div class="row" style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+                <span class="legend" style="margin:0;">Call</span>
+                <div class="radios" style="display:flex; gap:1rem; flex-wrap:wrap;">
                     <InputRadioGroup @bind-Value="_mode">
-                        @if (!_isGitHubPages)
-                        {
-                            <label>
-                                <InputRadio Value="@QueryMode.Search" /> Search KB
-                            </label>
-                        }
                         <label>
                             <InputRadio Value="@QueryMode.Rag" /> RAG
                         </label>
@@ -62,12 +59,6 @@
                         </label>
                     </InputRadioGroup>
                 </div>
-            </div>
-
-            <div class="row">
-                <label for="k">Top K (Search and RAG)</label>
-                <input id="k" type="number" min="1" max="@Api.MaxTopK" @bind="_topK"
-                       disabled="@(_mode == QueryMode.Chat)" />
             </div>
 
             <button type="button" disabled="@_busy" @onclick="RunAsync">Run</button>

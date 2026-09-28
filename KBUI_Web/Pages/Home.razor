@@ -60,6 +60,7 @@
             </div>
 
             <button type="button" disabled="@_busy" @onclick="RunAsync">Run</button>
+            <div class="run-divider"></div>
         </section>
 
         @if (!string.IsNullOrEmpty(_error))
@@ -94,9 +95,9 @@
 
                 @if (endCitations.Count > 0)
                 {
-                    <div class="results-block">
+                    <div class="results-block citation-rag-section">
+                        <div class="citation-rag-divider"></div>
                         <h2 class="legend">Citation RAG Request</h2>
-                        <div>______________________________</div>
                         @foreach (var c in endCitations)
                         {
                             <aside class="end-citation" aria-label="RAG request">
@@ -139,17 +140,9 @@
                     </div>
                 }
 
-                @if (!string.IsNullOrWhiteSpace(finalPrompt) || !string.IsNullOrWhiteSpace(retrievedContext) || !string.IsNullOrWhiteSpace(messagesText))
+                @if (!string.IsNullOrWhiteSpace(retrievedContext) || !string.IsNullOrWhiteSpace(messagesText))
                 {
                     <div class="results-block details">
-                        <h2 class="legend">Prompt details</h2>
-                        @if (!string.IsNullOrWhiteSpace(finalPrompt))
-                        {
-                            <p class="legend">Final Azure prompt</p>
-                            <div class="hit">
-                                <pre>@finalPrompt</pre>
-                            </div>
-                        }
                         @if (!string.IsNullOrWhiteSpace(retrievedContext))
                         {
                             <p class="legend">Retrieved context sent to model</p>

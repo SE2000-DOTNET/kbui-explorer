@@ -5,13 +5,12 @@
 @inject QueryApiClient Api
 @inject NavigationManager Nav
 
-<PageTitle>KBUI Explorer</PageTitle>
+<PageTitle>Knowledge Base UI Explorer</PageTitle>
 
 <main class="explorer">
     <header class="hero">
-        <h1>KBUI Explorer</h1>
+        <h1>Knowledge Base UI Explorer</h1>
         <p class="badge">Query-only · Rag_Ingestion_Tool</p>
-        <p class="meta">@_healthText</p>
         @if (!_isGitHubPages)
         {
             <p class="lock">This app can only call <code>/health</code>, <code>/search</code>, <code>/rag/query</code>, and
@@ -93,7 +92,7 @@
                     </div>
                 }
 
-                @if (endCitations.Count > 0)
+                @if (_showDebugDetails && endCitations.Count > 0)
                 {
                     <div class="results-block citation-rag-section">
                         <div class="citation-rag-divider"></div>
@@ -126,7 +125,7 @@
                     </div>
                 }
 
-                @if (_rag.Hits.Count > 0)
+                @if (_showDebugDetails && _rag.Hits.Count > 0)
                 {
                     <div class="results-block">
                         <h2 class="legend">Hits</h2>
@@ -140,7 +139,7 @@
                     </div>
                 }
 
-                @if (!string.IsNullOrWhiteSpace(retrievedContext) || !string.IsNullOrWhiteSpace(messagesText))
+                @if (_showDebugDetails && (!string.IsNullOrWhiteSpace(retrievedContext) || !string.IsNullOrWhiteSpace(messagesText)))
                 {
                     <div class="results-block details">
                         @if (!string.IsNullOrWhiteSpace(retrievedContext))
@@ -212,6 +211,7 @@
     private string? _error;
     private bool _busy;
     private bool _isGitHubPages => Nav.BaseUri.Contains("github.io", StringComparison.OrdinalIgnoreCase);
+    private bool _showDebugDetails => !_isGitHubPages || HasDebugQuery();
     private QueryMode _mode = QueryMode.Rag;
     private int _topK = 3;
     private int _maxLen;
@@ -223,7 +223,7 @@
     protected override async Task OnInitializedAsync()
     {
         _apiBase = Api.ApiBaseUrl;
-        _apiKey = Api.ApiKey;
+        _apiKey = _isGitHubPages ? "" : Api.ApiKey;
         _maxLen = Api.MaxQuestionLength;
         _maxTopK = Api.MaxTopK;
         _topK = Math.Min(3, _maxTopK);
@@ -308,6 +308,12 @@
         {
             _busy = false;
         }
+    }
+
+    private bool HasDebugQuery()
+    {
+        var query = Nav.ToAbsoluteUri(Nav.Uri).Query;
+        return query.Contains("debug=1", StringComparison.OrdinalIgnoreCase);
     }
 
     private static List<Citation> EndCitations(RagResponse rag) =>

@@ -27,6 +27,19 @@ jobs:
         with:
           dotnet-version: 9.0.x
 
+      - name: Reject bundled API keys
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path("KBUI_Web/wwwroot/appsettings.json")
+          data = json.loads(path.read_text(encoding="utf-8"))
+          key = (data.get("QueryUi") or {}).get("ApiKey") or ""
+          if str(key).strip():
+              raise SystemExit("QueryUi:ApiKey must be empty in KBUI_Web/wwwroot/appsettings.json")
+          print("QueryUi:ApiKey is empty")
+          PY
+
       - name: Restore dependencies
         run: dotnet restore KBUI_Web/KBUI_Web.csproj
 

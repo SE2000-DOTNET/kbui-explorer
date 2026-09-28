@@ -42,7 +42,7 @@ public sealed class QueryApiClient : IDisposable
     }
 
     public string ApiBaseUrl => (_options.ApiBaseUrl ?? "").TrimEnd('/');
-    public string ApiKey => _options.ApiKey ?? "";
+    public string ApiKey => IsPublicHost ? "" : (_options.ApiKey ?? "");
     public int MaxQuestionLength => Math.Max(1, _options.MaxQuestionLength);
     public int MaxTopK => Math.Max(1, _options.MaxTopK);
 
@@ -55,13 +55,18 @@ public sealed class QueryApiClient : IDisposable
             throw new InvalidOperationException("API base URL must be an absolute http or https URL.");
         }
 
+        if (uri.Scheme == Uri.UriSchemeHttp && !QueryValidator.IsLoopbackHost(uri.Host))
+        {
+            throw new InvalidOperationException("API base URL must use https except for localhost.");
+        }
+
         if (!string.IsNullOrEmpty(uri.AbsolutePath) && uri.AbsolutePath != "/")
         {
             throw new InvalidOperationException("API base URL must not include a path (use origin only, e.g. https://app-q-cpy-hud-dev.azurewebsites.net).");
         }
 
         _options.ApiBaseUrl = url;
-        _options.ApiKey = (apiKey ?? "").Trim();
+        _options.ApiKey = IsPublicHost ? "" : (apiKey ?? "").Trim();
         ResetClient();
     }
 
@@ -96,7 +101,8 @@ public sealed class QueryApiClient : IDisposable
         var body = new SearchRequest { Question = question.Trim(), TopK = ClampTopK(topK) };
         using var response = await SendAsync(HttpMethod.Post, "/rag/query", body, ct);
         var rag = await ReadAsync<RagResponse>(response, ct);
-        EnsureRagRequestCitation(rag, question, topK);
+        if (!IsPublicHost)
+            EnsureRagRequestCitation(rag, question, topK);
         return rag;
     }
 
@@ -128,6 +134,9 @@ public sealed class QueryApiClient : IDisposable
         return _client;
     }
 
+    private bool IsPublicHost =>
+        _nav.BaseUri.Contains("github.io", StringComparison.OrdinalIgnoreCase);
+
     private void ResetClient()
     {
         _client?.Dispose();
@@ -138,7 +147,7 @@ public sealed class QueryApiClient : IDisposable
     private async Task<HttpResponseMessage> SendAsync(HttpMethod method, string path, object? body, CancellationToken ct)
     {
         if (!AllowedPaths.Contains(path))
-            throw new InvalidOperationException($"Blocked: '{path}' is not a query endpoint. KBUI Explorer is query-only.");
+            throw new InvalidOperationException($"Blocked: '{path}' is not a query endpoint. Knowledge Base UI Explorer is query-only.");
 
         if (path.Contains("..", StringComparison.Ordinal) || path.Contains("://", StringComparison.Ordinal) || !path.StartsWith('/'))
             throw new InvalidOperationException("Blocked: invalid path.");
@@ -148,7 +157,7 @@ public sealed class QueryApiClient : IDisposable
         request.SetBrowserRequestCredentials(BrowserRequestCredentials.Omit);
         request.SetBrowserRequestMode(BrowserRequestMode.Cors);
 
-        if (!string.IsNullOrWhiteSpace(_options.ApiKey))
+        if (!string.IsNullOrWhiteSpace(_options.ApiKey) && !IsPublicHost)
             request.Headers.TryAddWithoutValidation("X-Api-Key", _options.ApiKey);
 
         if (body is not null)

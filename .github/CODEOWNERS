@@ -1,0 +1,5 @@
+# Security-sensitive paths. Create the GitHub team if it does not exist, then
+# enable required reviews for CODEOWNERS on main.
+.github/workflows/ @se2000-dotnet/maintainers
+KBUI_Web/wwwroot/appsettings.json @se2000-dotnet/maintainers
+KBUI Added Security.md @se2000-dotnet/maintainers

@@ -27,6 +27,20 @@ public static class QueryValidator
         if (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
             return false;
 
-        return uri.AbsolutePath == "/";
+        if (uri.Scheme == Uri.UriSchemeHttp && !IsLoopbackHost(uri.Host))
+            return false;
+
+        return uri.AbsolutePath == "/" || string.IsNullOrEmpty(uri.AbsolutePath);
+    }
+
+    public static bool IsLoopbackHost(string? host)
+    {
+        if (string.IsNullOrWhiteSpace(host))
+            return false;
+
+        return host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
+            || host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase)
+            || host.Equals("[::1]", StringComparison.OrdinalIgnoreCase)
+            || host.Equals("::1", StringComparison.OrdinalIgnoreCase);
     }
 }

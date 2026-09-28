@@ -3,8 +3,8 @@ updates:
   - package-ecosystem: nuget
     directory: /KBUI_Web
     schedule:
-      interval: weekly
+      interval: yearly
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
+      interval: yearly

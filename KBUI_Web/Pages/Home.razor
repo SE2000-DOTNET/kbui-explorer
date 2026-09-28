@@ -95,11 +95,12 @@
                 @if (endCitations.Count > 0)
                 {
                     <div class="results-block">
-                        <h2 class="legend">End citation</h2>
+                        <h2 class="legend">Citation RAG Request</h2>
+                        <div>______________________________</div>
                         @foreach (var c in endCitations)
                         {
                             <aside class="end-citation" aria-label="RAG request">
-                                <span class="pill">End citation</span>
+                                <span class="pill">Citation RAG Request</span>
                                 <strong>@(string.IsNullOrWhiteSpace(c.Title) ? "RAG request" : c.Title)</strong>
                                 <span class="src">@(c.DisplaySourceFile ?? "rag://request")</span>
                                 @if (!string.IsNullOrWhiteSpace(c.Content))
